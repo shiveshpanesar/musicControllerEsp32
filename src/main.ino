@@ -25,7 +25,7 @@ volatile int lastStateCLK = LOW;
 volatile double lastpwm = 0;
 
 const int PWM_CHANNEL = 0;     // ESP32 has 16 channels which can generate 16 independent waveforms
-const int PWM_FREQ = 19530;     // Recall that Arduino Uno is ~490 Hz. Official ESP32 example uses 5,000Hz
+const int PWM_FREQ = 19530;    // Recall that Arduino Uno is ~490 Hz. Official ESP32 example uses 5,000Hz
 const int PWM_RESOLUTION = 12; // We'll use same resolution as Uno (8 bits, 0-255) but ESP32 can go up to 16 bits
 
 // The max duty cycle value based on PWM resolution (will be 255 if resolution is 8 bits)
@@ -66,14 +66,14 @@ void TaskButtons(void *pvParameters)
 {
     (void)pvParameters;
     double upLimit = 150, downLimit = -150; // shift plus increase tempo / shift plus decrease tempo
-    double step = 1;                      // increase / decrease step
+    double step = 1;                        // increase / decrease step
 
     while (1)
     {
         if (btn4State && btn1State)
         {
             vTaskSuspend(ButtonTaask);
-            int lowCounter = -800; //minimum reading of shift plus play VINYL STOP effect
+            int lowCounter = -800; // minimum reading of shift plus play VINYL STOP effect
             bypass = true;
             if (isPlaying)
             {
@@ -99,6 +99,10 @@ void TaskButtons(void *pvParameters)
             vTaskResume(ButtonTaask);
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
+        else if (isPlaying && btn4State && btn2State && btn3State)
+        {
+            counter = 250;
+        }
         else if (btn4State && btn3State) // play/pause , if button 4 and 2 are pressed
         {
             counter = upLimit;
@@ -112,7 +116,7 @@ void TaskButtons(void *pvParameters)
         else if (isPlaying && btn3State) // if playing and buttton 2 is pressed , INCREASE TEMPO button
         {
             counter < (counterMaxSpeed - step) ? counter += step : counter = counterMaxSpeed;
-            vTaskDelay(7 / portTICK_PERIOD_MS);  // tempo bend increase speed
+            vTaskDelay(7 / portTICK_PERIOD_MS); // tempo bend increase speed
         }
         else if (isPlaying && btn2State) // if pllaying and btoon 3 is pressed] , DECREASE TEMPO button
         {
