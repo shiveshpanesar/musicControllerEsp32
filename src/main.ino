@@ -101,7 +101,8 @@ void TaskButtons(void *pvParameters)
         }
         else if (isPlaying && btn4State && btn2State && btn3State)
         {
-            counter = 250;
+            counter = counterMaxSpeed;
+            rotCounter = counterMaxSpeed;
         }
         else if (btn4State && btn3State) // play/pause , if button 4 and 2 are pressed
         {
