@@ -64,6 +64,7 @@ void IRAM_ATTR updateEncoder()
         cs = constrain(cs, rotMin, rotMax);
         rotaryCurrentSpeed.store(cs);
         currentSpeed.store(cs);
+        speedSetterMax.store(currentSpeed.load());
     }
     lastStateCLK = currentStateCLK;
 }
@@ -140,10 +141,24 @@ void TaskMotor(void *pvParameters)
 
     if (state == stateToggle)
     {
+        int lastSpeed = 0;
         while (1)
         {
             Serial.printf("Running with speed: %d\n", speed);
             vTaskDelay(50 / portTICK_PERIOD_MS);
+
+            if (speed == 0)
+            {
+                ledcWrite(PWM_CHANNEL, 0);
+            }
+            if (speed == 1)
+            {
+                if (lastSpeed != currentSpeed.load())
+                {
+                    lastSpeed = currentSpeed.load();
+                    ledcWrite(PWM_CHANNEL, lastSpeed);
+                }
+            }
             taskYIELD();
         }
     }
@@ -213,8 +228,8 @@ void TaskButtons(void *pvParameters)
             }
             TaskMotorParam *param = new TaskMotorParam;
             param->state = shift.load() ? stateShiftUp : stateShiftDown;
-            speedSetterMax.store(currentSpeed.load());
-            speedSetterMin.store(stopSpeed.load());
+            // speedSetterMax.store(currentSpeed.load());
+            // speedSetterMin.store(stopSpeed.load());
             param->max = speedSetterMax.load();
             param->min = speedSetterMin.load();
             xTaskCreatePinnedToCore(TaskMotor, "TaskMotor", 2048, param, 1, &runTaskHandle, ARDUINO_RUNNING_CORE);
@@ -233,7 +248,7 @@ void TaskButtons(void *pvParameters)
             }
             TaskMotorParam *param = new TaskMotorParam;
             currentSpeed.store(rotaryCurrentSpeed.load());
-            param->speed = play.load() ? currentSpeed.load() : stopSpeed.load();
+            param->speed = play.load() ? 1 : 0;
             param->state = stateToggle;
             xTaskCreatePinnedToCore(TaskMotor, "TaskMotor", 2048, param, 1, &runTaskHandle, ARDUINO_RUNNING_CORE);
         }
@@ -304,7 +319,8 @@ void setup()
     display.setCursor(10, 70);
     display.print("NAVENDU");
     display.display();
-
+    ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+    ledcAttachPin(26, PWM_CHANNEL);
     pinMode(CLK, INPUT);
     pinMode(DT, INPUT);
     attachInterrupt(digitalPinToInterrupt(CLK), updateEncoder, CHANGE);
