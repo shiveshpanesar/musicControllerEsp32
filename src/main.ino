@@ -64,7 +64,7 @@ void IRAM_ATTR updateEncoder()
         cs = constrain(cs, rotMin, rotMax);
         rotaryCurrentSpeed.store(cs);
         currentSpeed.store(cs);
-        speedSetterMax.store(currentSpeed.load());
+        speedSetterMax.store(cs);
     }
     lastStateCLK = currentStateCLK;
 }
