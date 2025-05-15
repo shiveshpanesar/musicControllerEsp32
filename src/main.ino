@@ -144,7 +144,6 @@ void TaskMotor(void *pvParameters)
         int lastSpeed = 0;
         while (1)
         {
-            Serial.printf("Running with speed: %d\n", speed);
             vTaskDelay(50 / portTICK_PERIOD_MS);
 
             if (speed == 0)
@@ -168,7 +167,6 @@ void TaskMotor(void *pvParameters)
         oledShow.store(false);
         for (int i = max; i >= min; i--)
         {
-            Serial.println(i);
             speedSetterMin.store(i);
             oledShowSpeed.store(i);
             vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -184,7 +182,6 @@ void TaskMotor(void *pvParameters)
         oledShow.store(false);
         for (int i = min; i <= max; i++)
         {
-            Serial.println(i);
             speedSetterMax.store(i);
             oledShowSpeed.store(i);
             vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -197,7 +194,19 @@ void TaskMotor(void *pvParameters)
     runTaskHandle = NULL;
     vTaskDelete(NULL);
 }
-
+void TaskRunMotor(void *pvParameters)
+{
+    (void)pvParameters;
+    while (1)
+    {
+        if (play.load())
+        {
+            int pwm = map(oledShowSpeed.load(), rotMin, rotMax, 1800, 2338);
+            ledcWrite(PWM_CHANNEL, pwm);
+        }
+        taskYIELD();
+    }
+}
 void TaskButtons(void *pvParameters)
 {
     (void)pvParameters;
@@ -228,8 +237,6 @@ void TaskButtons(void *pvParameters)
             }
             TaskMotorParam *param = new TaskMotorParam;
             param->state = shift.load() ? stateShiftUp : stateShiftDown;
-            // speedSetterMax.store(currentSpeed.load());
-            // speedSetterMin.store(stopSpeed.load());
             param->max = speedSetterMax.load();
             param->min = speedSetterMin.load();
             xTaskCreatePinnedToCore(TaskMotor, "TaskMotor", 2048, param, 1, &runTaskHandle, ARDUINO_RUNNING_CORE);
@@ -327,6 +334,7 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(DT), updateEncoder, CHANGE);
     xTaskCreatePinnedToCore(TaskButtons, "TaskBTN", 1024, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
     xTaskCreatePinnedToCore(TaskUpdateScreen, "TaskScreen", 2048, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
+    xTaskCreatePinnedToCore(TaskRunMotor, "TaskMotor", 2048, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
 
     // xTaskCreatePinnedToCore(TaskPrintScreen, "TaskPrint", 2048, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
 }
