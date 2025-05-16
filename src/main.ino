@@ -204,6 +204,10 @@ void TaskRunMotor(void *pvParameters)
             int pwm = map(oledShowSpeed.load(), rotMin, rotMax, 1800, 2338);
             ledcWrite(PWM_CHANNEL, pwm);
         }
+        else
+        {
+            ledcWrite(PWM_CHANNEL, 0);
+        }
         taskYIELD();
     }
 }
